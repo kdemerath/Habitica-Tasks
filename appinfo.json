@@ -28,6 +28,11 @@
                 "file": "fonts/UbuntuMono-Regular.ttf",
                 "name": "MONO_FONT_14",
                 "type": "font"
+            },
+            {
+                "file": "images/habiticaTasks_Screen1.png",
+                "name": "IMAGES_HABITICATASKS_SCREEN1_PNG",
+                "type": "png"
             }
         ]
     },
@@ -35,7 +40,7 @@
     "shortName": "Habitica Tasks",
     "uuid": "0eb30e8c-0040-40e5-a72b-47ddf0fba3c9",
     "versionCode": 1,
-    "versionLabel": "1.0",
+    "versionLabel": "0.1",
     "watchapp": {
         "hiddenApp": false,
         "watchface": false
