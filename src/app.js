@@ -16,6 +16,19 @@ var habiticaGetUserTasksUrl = '/user/tasks';
 // AJAX connection
 var ajax = require('ajax');
 
+// Set a configurable with the open callback
+Settings.config(
+  { url: 'https://raw.githubusercontent.com/kdemerath/Habitica-Tasks/master/settings.html' },
+  function(e) {
+    console.log('opening configurable');
+  },
+  function(e) {
+    console.log('closed configurable');
+  }
+);
+var options = Settings.option();
+console.log(JSON.stringify(options));
+
 // check habitica status
 checkHabiticaStatus();
 
