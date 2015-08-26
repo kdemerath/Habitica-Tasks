@@ -16,21 +16,31 @@ var habiticaGetUserTasksUrl = '/user/tasks';
 // AJAX connection
 var ajax = require('ajax');
 
-// Set a configurable with the open callback
+// Set a configurable
 Settings.config(
-  { url: 'https://raw.githubusercontent.com/kdemerath/Habitica-Tasks/master/settings.html' },
+  { url: 'https://kdemerath.github.io/settings.html' },
   function(e) {
     console.log('opening configurable');
   },
   function(e) {
     console.log('closed configurable');
+    // Show the raw response if parsing failed
+    if (e.failed) {
+      console.log(e.response);
+    } else {
+      var options = Settings.option();
+      console.log(JSON.stringify(options));
+      Settings.data(options);
+    }
   }
 );
-var options = Settings.option();
-console.log(JSON.stringify(options));
 
 // check habitica status
 checkHabiticaStatus();
+
+// get all tasks
+var allTasks = [];
+getUserTasks();
 
 var main = new UI.Card({
   title: 'Pebble.js',
@@ -42,21 +52,52 @@ var main = new UI.Card({
 main.show();
 
 main.on('click', 'up', function(e) {
-  var menu = new UI.Menu({
-    sections: [{
-      items: [{
-        title: 'Pebble.js',
-        icon: 'images/menu_icon.png',
-        subtitle: 'Can do Menus'
-      }, {
-        title: 'Second Item',
-        subtitle: 'Subtitle Text'
-      }]
-    }]
-  });
+  var sectionHabits = {
+    title: 'Habits',
+    items: []
+  };
+  var sectionDailies = {
+    title: 'Dailies',
+    items: []
+  };
+  var sectionToDos = {
+    title: 'To-Dos',
+    items: []
+  };
+  
+  if(!allTasks){console.log('allTasks is undefined');} else {
+  var allTasksPrep = allTasks.map(
+    function(x) {
+      x.title = x.text;
+      return x;
+    }
+  );
+  sectionHabits.items = allTasksPrep.filter(
+    function(x){
+      return x.type == 'habit';
+    }
+  );
+  sectionDailies.items = allTasksPrep.filter(
+    function(x){
+      return x.type == 'daily';
+    }
+  );
+  sectionToDos.items = allTasksPrep.filter(
+    function(x){
+      return x.type == 'todo';
+    }
+  );
+  }
+  
+  var menu = new UI.Menu();
+  menu.section(1, sectionHabits);
+  menu.section(2, sectionDailies);
+  menu.section(3, sectionToDos);
+  
   menu.on('select', function(e) {
     console.log('Selected item #' + e.itemIndex + ' of section #' + e.sectionIndex);
     console.log('The item is titled "' + e.item.title + '"');
+    scoreTaskUp(e.item);
   });
   menu.show();
 });
@@ -103,13 +144,42 @@ function getUserTasks() {
   ajax(
     {
       url: habiticaBaseUrl + habiticaGetUserTasksUrl,
-      type: 'json'
+      type: 'json',
+      headers: {
+        'x-api-user': Settings.option('userId'),
+        'x-api-key': Settings.option('apiToken')
+      }
     },
     function(data, status, request) {
-      console.log('Habitica Server Status: ' + data.status);
+      console.log('User tasks: ' + JSON.stringify(data));
+      allTasks = data;
     },
     function(error, status, request) {
       console.log('The ajax request failed: ' + error);
     }
   );
+}
+
+function scoreTaskUp(task) {
+  if (task) {
+    if (task.id) {
+  ajax(
+    {
+      url: habiticaBaseUrl + habiticaGetUserTasksUrl + '/' + task.id + '/up',
+      method: 'post',
+      type: 'json',
+      headers: {
+        'x-api-user': Settings.option('userId'),
+        'x-api-key': Settings.option('apiToken')
+      }
+    },
+    function(data, status, request) {
+      console.log('Return value: ' + JSON.stringify(data));
+    },
+    function(error, status, request) {
+      console.log('The ajax request failed: ' + error);
+    }
+  );
+    }
+  }
 }
