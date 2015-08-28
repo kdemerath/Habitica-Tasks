@@ -54,7 +54,7 @@ if (!checkHabiticaStatus) {
   // create start screen
   var main = new UI.Card({
     title: 'habitica',
-    icon: 'images/menu_icon.png',
+    icon: 'images/habiticaTasks_icon28x28bw.png',
     subtitle: 'Tasks',
     body: 'Press down to view your tasks.'
   });
