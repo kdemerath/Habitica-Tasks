@@ -10,7 +10,6 @@
         "media": [
             {
                 "file": "images/menu_icon.png",
-                "menuIcon": true,
                 "name": "IMAGE_MENU_ICON",
                 "type": "png"
             },
@@ -30,6 +29,12 @@
                 "type": "font"
             },
             {
+                "file": "images/habiticaTasks_icon28x28bw.png",
+                "menuIcon": true,
+                "name": "IMAGES_HABITICATASKS_ICON28X28BW_PNG",
+                "type": "png"
+            },
+            {
                 "file": "images/habiticaTasks_Screen1.png",
                 "name": "IMAGES_HABITICATASKS_SCREEN1_PNG",
                 "type": "png"
@@ -40,7 +45,7 @@
     "shortName": "Habitica Tasks",
     "uuid": "0eb30e8c-0040-40e5-a72b-47ddf0fba3c9",
     "versionCode": 1,
-    "versionLabel": "0.1",
+    "versionLabel": "0.2",
     "watchapp": {
         "hiddenApp": false,
         "watchface": false
