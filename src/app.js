@@ -114,28 +114,25 @@ function createTasksMenu() {
       console.log('allTasks is undefined');
     } else {
       var allTasksPrep = allTasks.slice();
-      console.log('allTasksPrep lenght ' + allTasksPrep.lenght);
       allTasksPrep = allTasksPrep.map(
         function(x) {
           x.title = x.text;
           return x;
         }
       );
-      console.log('allTasksPrep lenght ' + allTasksPrep.lenght);
       sectionHabits.items = allTasksPrep.filter(
         function(x){
           return x.type == 'habit';
         }
       ).slice();
-      console.log('sectionHabits.items lenght ' + sectionHabits.items.lenght);
       sectionDailies.items = allTasksPrep.filter(
         function(x){
-          return x.type == 'daily';
+          return x.type == 'daily' && !x.completed;
         }
       ).slice();
       sectionToDos.items = allTasksPrep.filter(
         function(x){
-          return x.type == 'todo';
+          return x.type == 'todo' && !x.completed;
         }
       ).slice();
       }
