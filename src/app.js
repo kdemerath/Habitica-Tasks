@@ -144,7 +144,39 @@ function createTasksMenu() {
     menu.on('select', function(e) {
       console.log('Selected item #' + e.itemIndex + ' of section #' + e.sectionIndex);
       console.log('The item is titled "' + e.item.title + '"');
-      scoreTaskUp(e.item);
+      if (e.item.down === true) {
+        console.log('The selected task has .down-item.');
+        if (e.item.up === false) {
+          console.log('The selected task has no .up-item.');
+          scoreTaskDown(e.item);
+        } else {
+          var selectedTask = e;
+          var cardUpDown = new UI.Card(
+            {
+              'title': e.item.type,
+              'body': e.item.title
+            }
+          );
+          cardUpDown.action({
+            up: 'images/action_icon_plus.png',
+            down: 'images/action_icon_minus.png'
+          });
+          cardUpDown.on('click', 'up', function(e) {
+            console.log('cardUpDown click up');
+            scoreTaskUp(selectedTask.item);
+            cardUpDown.hide();
+          });
+          cardUpDown.on('click', 'down', function(e) {
+            console.log('cardUpDown click down');
+            scoreTaskDown(selectedTask.item);
+            cardUpDown.hide();
+          });
+          cardUpDown.show();
+        }
+      } else {
+        console.log('The selected task has no .down-item.');
+        scoreTaskUp(e.item);
+      }
     });
     return menu;
   }
@@ -172,23 +204,55 @@ function getUserTasks() {
 function scoreTaskUp(task) {
   if (task) {
     if (task.id) {
-  ajax(
-    {
-      url: habiticaBaseUrl + habiticaGetUserTasksUrl + '/' + task.id + '/up',
-      method: 'post',
-      type: 'json',
-      headers: {
-        'x-api-user': Settings.option('userId'),
-        'x-api-key': Settings.option('apiToken')
-      }
-    },
-    function(data, status, request) {
-      console.log('Return value: ' + JSON.stringify(data));
-    },
-    function(error, status, request) {
-      console.log('The ajax request failed: ' + error);
+      ajax(
+        {
+          url: habiticaBaseUrl + habiticaGetUserTasksUrl + '/' + task.id + '/up',
+          method: 'post',
+          type: 'json',
+          headers: {
+            'x-api-user': Settings.option('userId'),
+            'x-api-key': Settings.option('apiToken')
+          }
+        },
+        function(data, status, request) {
+          console.log('Return value: ' + JSON.stringify(data));
+        },
+        function(error, status, request) {
+          console.log('The ajax request failed: ' + error);
+        }
+      );
+    } else {
+      console.log('Task id not available.');
     }
-  );
+  } else {
+    console.log('Task not available.');
+  }
+}
+
+function scoreTaskDown(task) {
+  if (task) {
+    if (task.id) {
+      ajax(
+        {
+          url: habiticaBaseUrl + habiticaGetUserTasksUrl + '/' + task.id + '/down',
+          method: 'post',
+          type: 'json',
+          headers: {
+            'x-api-user': Settings.option('userId'),
+            'x-api-key': Settings.option('apiToken')
+          }
+        },
+        function(data, status, request) {
+          console.log('Return value: ' + JSON.stringify(data));
+        },
+        function(error, status, request) {
+          console.log('The ajax request failed: ' + error);
+        }
+      );
+    } else {
+      console.log('Task id not available.');
     }
+  } else {
+    console.log('Task not available.');
   }
 }
