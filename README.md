@@ -1,13 +1,11 @@
 # Habitica-Tasks
 
-this is a working prototype.
-Select task to score it up or mark it as completed.
+This is a watchapp for pebble watches. It lets you access your habitica (aka habitRPG) tasks and score them up or down or mark them completed. If you found an issue please report it here.
 
-## To-Dos v1.0
-- add menu icon 28x28
-- make all images b+w
-- add Header Image (at least one required) 720x320px PNG
+## To-Dos v1.3
+- add Internationalization
+- add user stats like HP/EXP/Mana/Gold
 
-## To-Dos v2.0
+## To-Dos v1.4
 - resolve some issues
 - implement some feature requests
