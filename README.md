@@ -5,10 +5,5 @@ Its focus is
 - lean access to habits, dailies and to-dos
 - fast mark / score of your tasks
 
-## To-Dos v1.3
-- add Internationalization
-- add user stats like HP/EXP/Mana/Gold
-
 ## To-Dos v1.4
-- resolve some issues
-- implement some feature requests
+- see issues for more information on upcoming features and bug fixes
