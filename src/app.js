@@ -12,6 +12,7 @@ var ajax = require('ajax');
 var habiticaBaseUrl = 'https://habitica.com/api/v2';
 var habiticaStatus = '/status'; //Returns the status of the server (up or down). Does not require authentication.
 var habiticaGetUserTasksUrl = '/user/tasks';
+var habiticaGetUserAnonymized = '/user/anonymized';
 
 // Set a configurable
 Settings.config(
@@ -51,6 +52,96 @@ if (!checkHabiticaStatus) {
   var allTasks = [];
   getUserTasks();
   
+  // get user object
+  var user = {};
+  getUserObject();
+  
+  // start menu
+  var mainMenu = new UI.Menu({
+    sections: [{
+      title: 'Tasks',
+      items: [{
+        title: 'Habits' 
+      }, {
+        title: 'Dailies'
+      }, {
+        title: 'To-Dos'
+      }]
+    }, {
+      title: 'User',
+      items: [{
+        title: 'Stats'
+      }]
+    }]
+  });
+  
+  if (Pebble.getActiveWatchInfo) {
+    mainMenu.highlightBackgroundColor = 'indigo';
+  } else {
+    mainMenu.highlightBackgroundColor = 'black';
+  }
+
+  mainMenu.on('select', function(e) {
+    console.log('Selected section ' + e.sectionIndex + ' "' + e.section.title + '" item ' + e.itemIndex + ' "' + e.item.title + '"');
+    if (!allTasks) {
+      var cardNoTasks = new UI.Card({
+        title: 'No tasks',
+        body: 'Please retry.'
+      });
+      cardNoTasks.show();
+    } else {
+      switch (e.sectionIndex) {
+        case 0: { // tasks
+          // create tasks menu
+          var menuAllTasks = new UI.Menu();
+          if (Pebble.getActiveWatchInfo) {
+            menuAllTasks.highlightBackgroundColor = 'indigo';
+          } else {
+            menuAllTasks.highlightBackgroundColor = 'black';
+          }
+          switch (e.itemIndex) {
+            case 0: { // habits
+              menuAllTasks = createTasksMenu('habit');
+              break;
+            }
+            case 1: { // dailies
+              menuAllTasks = createTasksMenu('daily');
+              break;
+            }
+            case 2: { // to-dos
+              menuAllTasks = createTasksMenu('todo');
+              break;
+            }
+          }
+          menuAllTasks.show();
+          break;
+        }
+        case 1: { // user
+          switch (e.itemIndex) {
+            case 0: { // stats
+              if (!user) {
+                var cardNoUser = new UI.Card({
+                  title: 'No user data',
+                  body: 'No user data available. Please retry.'
+                });
+                cardNoUser.show();
+              } else {
+                var cardUserStats = new UI.Card({
+                  title: 'User Stats',
+                  body: 'Health: ' + user.stats.hp + '/' + user.stats.maxHealth + '\n' + 'Gold: ' + Math.trunc(user.stats.gp) + '\n' + 'Level: ' + user.stats.lvl + '\n' + 'Experience: ' + user.stats.exp + '/' + user.stats.toNextLevel
+                });
+                cardUserStats.show();
+              }
+              break;
+            }
+          }
+          break;
+        }
+      }
+    }
+  });
+  mainMenu.show();
+  
   // create start screen
   var main = new UI.Card({
     title: 'habitica',
@@ -58,7 +149,7 @@ if (!checkHabiticaStatus) {
     subtitle: 'Tasks',
     body: 'Press down to view your tasks.'
   });
-  main.show();
+  //main.show();
   
   main.on('click', 'down', function(e) {
     if (!allTasks) {
@@ -70,9 +161,18 @@ if (!checkHabiticaStatus) {
     } else {
       // create tasks menu
       var menuAllTasks = new UI.Menu();
+      if (Pebble.getActiveWatchInfo) {
+        menuAllTasks.highlightBackgroundColor = 'indigo';
+      } else {
+        menuAllTasks.highlightBackgroundColor = 'black';
+      }
       menuAllTasks = createTasksMenu();
       menuAllTasks.show();
     }
+  });
+  
+  main.on('click', 'up', function(e) {
+    
   });
 }
 
@@ -95,31 +195,37 @@ function checkHabiticaStatus() {
   return serverIsUp;
 }
 
-function createTasksMenu() {
-    var menu = new UI.Menu();
-    var sectionHabits = {
-      title: 'Habits',
-      items: []
-    };
-    var sectionDailies = {
-      title: 'Dailies',
-      items: []
-    };
-    var sectionToDos = {
-      title: 'To-Dos',
-      items: []
-    };
+function createTasksMenu(section) {
+  // initialize menu
+  var menu = new UI.Menu();
+  // initialize sections
+  var sectionHabits = {
+    title: 'Habits',
+    items: []
+  };
+  var sectionDailies = {
+    title: 'Dailies',
+    items: []
+  };
+  var sectionToDos = {
+    title: 'To-Dos',
+    items: []
+  };
+  
+  // get tasks from allTasks and put into sectionsXY
+  if(!allTasks){
+    console.log('allTasks is undefined');
+  } else {
     
-    if(!allTasks){
-      console.log('allTasks is undefined');
-    } else {
-      var allTasksPrep = allTasks.slice();
-      allTasksPrep = allTasksPrep.map(
-        function(x) {
-          x.title = x.text;
-          return x;
-        }
-      );
+    // get copy of allTasks
+    var allTasksPrep = allTasks.slice();
+    
+    // get only 'section' tasks
+    if (!section) {
+      console.log('Section not defined. Get all kind of tasks.');
+      allTasksPrep = enrichTaskItemsByMenuFields(allTasksPrep);
+      
+      // put appropriate tasks into sections
       sectionHabits.items = allTasksPrep.filter(
         function(x){
           return x.type == 'habit';
@@ -135,51 +241,87 @@ function createTasksMenu() {
           return x.type == 'todo' && !x.completed;
         }
       ).slice();
-      }
-    
-    menu.section(1, sectionHabits);
-    menu.section(2, sectionDailies);
-    menu.section(3, sectionToDos);
-    
-    menu.on('select', function(e) {
-      console.log('Selected item #' + e.itemIndex + ' of section #' + e.sectionIndex);
-      console.log('The item is titled "' + e.item.title + '"');
-      if (e.item.down === true) {
-        console.log('The selected task has .down-item.');
-        if (e.item.up === false) {
-          console.log('The selected task has no .up-item.');
-          scoreTaskDown(e.item);
-        } else {
-          var selectedTask = e;
-          var cardUpDown = new UI.Card(
-            {
-              'title': e.item.type,
-              'body': e.item.title
+      
+      // put sections into menu
+      menu.section(1, sectionHabits);
+      menu.section(2, sectionDailies);
+      menu.section(3, sectionToDos);
+    } else {
+      console.log('Section is "' + section + '". Get only these kind of tasks.');
+      switch (section) {
+        case 'habit': {
+          sectionHabits.items = allTasksPrep.filter(
+            function(x){
+              return x.type == 'habit';
             }
-          );
-          cardUpDown.action({
-            up: 'images/action_icon_plus.png',
-            down: 'images/action_icon_minus.png'
-          });
-          cardUpDown.on('click', 'up', function(e) {
-            console.log('cardUpDown click up');
-            scoreTaskUp(selectedTask.item);
-            cardUpDown.hide();
-          });
-          cardUpDown.on('click', 'down', function(e) {
-            console.log('cardUpDown click down');
-            scoreTaskDown(selectedTask.item);
-            cardUpDown.hide();
-          });
-          cardUpDown.show();
+          ).slice();
+          sectionHabits.items = enrichTaskItemsByMenuFields(sectionHabits.items);
+          menu.section(1, sectionHabits);
+          break;
         }
-      } else {
-        console.log('The selected task has no .down-item.');
-        scoreTaskUp(e.item);
+        case 'daily': {
+          sectionDailies.items = allTasksPrep.filter(
+            function(x){
+              return x.type == 'daily' && !x.completed;
+            }
+          ).slice();
+          sectionDailies.items = enrichTaskItemsByMenuFields(sectionDailies.items);
+          menu.section(2, sectionDailies);
+          break;
+        }
+        case 'todo': {
+          sectionToDos.items = allTasksPrep.filter(
+            function(x){
+              return x.type == 'todo' && !x.completed;
+            }
+          ).slice();
+          sectionToDos.items = enrichTaskItemsByMenuFields(sectionToDos.items);
+          menu.section(3, sectionToDos);
+          break;
+        }
       }
-    });
-    return menu;
+    }
   }
+  
+  menu.on('select', function(e) {
+    console.log('Selected item #' + e.itemIndex + ' of section #' + e.sectionIndex);
+    console.log('The item is titled "' + e.item.title + '"');
+    if (e.item.down === true) {
+      console.log('The selected task has .down-item.');
+      if (e.item.up === false) {
+        console.log('The selected task has no .up-item.');
+        scoreTaskDown(e.item);
+      } else {
+        var selectedTask = e;
+        var cardUpDown = new UI.Card(
+          {
+            'title': e.item.type,
+            'body': e.item.title
+          }
+        );
+        cardUpDown.action({
+          up: 'images/action_icon_plus.png',
+          down: 'images/action_icon_minus.png'
+        });
+        cardUpDown.on('click', 'up', function(e) {
+          console.log('cardUpDown click up');
+          scoreTaskUp(selectedTask.item);
+          cardUpDown.hide();
+        });
+        cardUpDown.on('click', 'down', function(e) {
+          console.log('cardUpDown click down');
+          scoreTaskDown(selectedTask.item);
+          cardUpDown.hide();
+        });
+        cardUpDown.show();
+      }
+    } else {
+      console.log('The selected task has no .down-item.');
+      scoreTaskUp(e.item);
+    }
+  });
+  return menu;
+}
 
 function getUserTasks() {
   ajax(
@@ -255,4 +397,44 @@ function scoreTaskDown(task) {
   } else {
     console.log('Task not available.');
   }
+}
+
+function getUserObject() {
+  ajax(
+    {
+      url: habiticaBaseUrl + habiticaGetUserAnonymized,
+      type: 'json',
+      headers: {
+        'x-api-user': Settings.option('userId'),
+        'x-api-key': Settings.option('apiToken')
+      }
+    },
+    function(data, status, request) {
+      console.log('User object: ' + JSON.stringify(data));
+      user = data;
+    },
+    function(error, status, request) {
+      console.log('The ajax request failed: ' + error);
+    }
+  );
+}
+
+function enrichTaskItemsByMenuFields(tasksArray) {
+  // enrich tasks by menu relevant fields
+  tasksArray = tasksArray.map(
+    function(x) {
+      x.title = x.text;
+      if (x.text.length > 14) {
+        if (x.text.length > 20) {
+          x.subtitle = '...' + x.text.substring(15);
+        } else {
+          x.subtitle = x.text;
+        }
+      } else {
+        x.subtitle = x.text;
+      }
+      return x;
+    }
+  );
+  return tasksArray;
 }
