@@ -128,7 +128,7 @@ if (!checkHabiticaStatus) {
               } else {
                 var cardUserStats = new UI.Card({
                   title: 'User Stats',
-                  body: 'Health: ' + user.stats.hp + '/' + user.stats.maxHealth + '\n' + 'Gold: ' + Math.trunc(user.stats.gp) + '\n' + 'Level: ' + user.stats.lvl + '\n' + 'Experience: ' + user.stats.exp + '/' + user.stats.toNextLevel
+                  body: 'Health: ' + Math.round(user.stats.hp) + '/' + user.stats.maxHealth + '\n' + 'Gold: ' + Math.trunc(user.stats.gp) + '\n' + 'Level: ' + user.stats.lvl + '\n' + 'Experience: ' + user.stats.exp + '/' + user.stats.toNextLevel
                 });
                 cardUserStats.show();
               }
@@ -262,7 +262,10 @@ function createTasksMenu(section) {
         case 'daily': {
           sectionDailies.items = allTasksPrep.filter(
             function(x){
-              return x.type == 'daily' && !x.completed;
+              var today = new Date();
+              var startDate = new Date(x.startDate);
+              console.log('heute ist ' + today + '. Start Datum war ' + startDate + '. Differenz ist ' + (today - startDate) + '. Das sind ' + Math.trunc((today - startDate)/(1000*60*60*24)) + ' Tage.');
+              return x.type == 'daily' && !x.completed  && ((x.frequency == 'weekly' && x.repeat[habiticaWeekday()]) || (x.frequency == 'daily' && (Math.trunc((today - startDate)/(1000*60*60*24)) % x.everyX === 0)));
             }
           ).slice();
           sectionDailies.items = enrichTaskItemsByMenuFields(sectionDailies.items);
@@ -437,4 +440,22 @@ function enrichTaskItemsByMenuFields(tasksArray) {
     }
   );
   return tasksArray;
+}
+
+function habiticaWeekday(date) {
+  var weekday = new Array(7);
+  weekday[0] = "su";
+  weekday[1] = "m";
+  weekday[2] = "t";
+  weekday[3] = "w";
+  weekday[4] = "th";
+  weekday[5] = "f";
+  weekday[6] = "s";
+  
+  if (!date) {
+    var today = new Date();
+    return weekday[today.getDay()];
+  } else {
+    return weekday[date.getDay()];
+  }
 }
