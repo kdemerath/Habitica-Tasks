@@ -84,12 +84,14 @@ if (!checkHabiticaStatus) {
   mainMenu.on('select', function(e) {
     console.log('Selected section ' + e.sectionIndex + ' "' + e.section.title + '" item ' + e.itemIndex + ' "' + e.item.title + '"');
     if (!allTasks) {
+      console.log('No tasks available');
       var cardNoTasks = new UI.Card({
         title: 'No tasks',
         body: 'Please retry.'
       });
       cardNoTasks.show();
     } else {
+      console.log('Tasks available');
       switch (e.sectionIndex) {
         case 0: { // tasks
           // create tasks menu
@@ -120,15 +122,25 @@ if (!checkHabiticaStatus) {
           switch (e.itemIndex) {
             case 0: { // stats
               if (!user) {
+                console.log('No user data available');
                 var cardNoUser = new UI.Card({
                   title: 'No user data',
                   body: 'No user data available. Please retry.'
                 });
                 cardNoUser.show();
               } else {
+                console.log('User data available');
+                console.log('Health: ' + Math.round(user.stats.hp));
+                console.log('MaxHealth' + user.stats.maxHealth);
+                console.log('Gold: ' + Math.floor(user.stats.gp));
+                console.log('Level: ' + user.stats.lvl);
+                console.log('Experience: ' + user.stats.exp);
+                console.log('toNextLevel' + user.stats.toNextLevel);
+                console.log('Mana: ' + Math.floor(user.stats.mp));
+                console.log('maxMP' + user.stats.maxMP);
                 var cardUserStats = new UI.Card({
                   title: 'User Stats',
-                  body: 'Health: ' + Math.round(user.stats.hp) + '/' + user.stats.maxHealth + '\n' + 'Gold: ' + Math.trunc(user.stats.gp) + '\n' + 'Level: ' + user.stats.lvl + '\n' + 'Experience: ' + user.stats.exp + '/' + user.stats.toNextLevel
+                  body: 'Health: ' + Math.round(user.stats.hp) + '/' + user.stats.maxHealth + '\n' + 'Gold: ' + Math.floor(user.stats.gp) + '\n' + 'Level: ' + user.stats.lvl + '\n' + 'Experience: ' + user.stats.exp + '/' + user.stats.toNextLevel + '\n' + 'Mana: ' + Math.floor(user.stats.mp) + '/' + user.stats.maxMP
                 });
                 cardUserStats.show();
               }
@@ -264,8 +276,8 @@ function createTasksMenu(section) {
             function(x){
               var today = new Date();
               var startDate = new Date(x.startDate);
-              console.log('heute ist ' + today + '. Start Datum war ' + startDate + '. Differenz ist ' + (today - startDate) + '. Das sind ' + Math.trunc((today - startDate)/(1000*60*60*24)) + ' Tage.');
-              return x.type == 'daily' && !x.completed  && ((x.frequency == 'weekly' && x.repeat[habiticaWeekday()]) || (x.frequency == 'daily' && (Math.trunc((today - startDate)/(1000*60*60*24)) % x.everyX === 0)));
+              //console.log('heute ist ' + today + '. Start Datum war ' + startDate + '. Differenz ist ' + (today - startDate) + '. Das sind ' + Math.floor((today - startDate)/(1000*60*60*24)) + ' Tage.');
+              return x.type == 'daily' && !x.completed  && ((x.frequency == 'weekly' && x.repeat[habiticaWeekday()]) || (x.frequency == 'daily' & startDate < today && (Math.floor((today - startDate)/(1000*60*60*24)) % x.everyX === 0)));
             }
           ).slice();
           sectionDailies.items = enrichTaskItemsByMenuFields(sectionDailies.items);

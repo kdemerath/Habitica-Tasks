@@ -11,17 +11,17 @@
             {
                 "file": "images/menu_icon.png",
                 "name": "IMAGE_MENU_ICON",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "file": "images/logo_splash.png",
                 "name": "IMAGE_LOGO_SPLASH",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "file": "images/tile_splash.png",
                 "name": "IMAGE_TILE_SPLASH",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "file": "fonts/UbuntuMono-Regular.ttf",
@@ -31,26 +31,30 @@
             {
                 "file": "images/action_icon_minus.png",
                 "name": "IMAGES_ACTION_ICON_MINUS_PNG",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "file": "images/action_icon_plus.png",
                 "name": "IMAGES_ACTION_ICON_PLUS_PNG",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "file": "images/habiticaTasks_icon28x28bw.png",
                 "menuIcon": true,
                 "name": "IMAGES_HABITICATASKS_ICON28X28BW_PNG",
-                "type": "png"
+                "type": "bitmap"
             }
         ]
     },
     "sdkVersion": "3",
     "shortName": "Habitica Tasks",
+    "targetPlatforms": [
+        "aplite",
+        "basalt"
+    ],
     "uuid": "0eb30e8c-0040-40e5-a72b-47ddf0fba3c9",
     "versionCode": 1,
-    "versionLabel": "1.4",
+    "versionLabel": "1.5",
     "watchapp": {
         "hiddenApp": false,
         "watchface": false
