@@ -7,6 +7,7 @@
 var UI = require('ui');
 var Settings = require('settings');
 var ajax = require('ajax');
+var Feature = require('platform/feature');
 
 // habitica API constants
 var habiticaBaseUrl = 'https://habitica.com/api/v2';
@@ -18,16 +19,16 @@ var habiticaGetUserAnonymized = '/user/anonymized';
 Settings.config(
   { url: 'https://kdemerath.github.io/settings.html' },
   function(e) {
-    console.log('opening configurable');
+    //console.log('opening configurable');
   },
   function(e) {
-    console.log('closed configurable');
+    //console.log('closed configurable');
     // Show the raw response if parsing failed
     if (e.failed) {
       console.log(e.response);
     } else {
       var options = Settings.option();
-      console.log(JSON.stringify(options));
+      //console.log(JSON.stringify(options));
       Settings.data(options);
     }
   }
@@ -37,13 +38,15 @@ Settings.config(
 if (!checkHabiticaStatus) {
   var cardNoServer = new UI.Card({
     title: 'Server unavaiable',
-    body: 'habitica Server is not available. Please restart.'
+    body: 'habitica Server is not available. Please restart.',
+    scrollable: true
   });
   cardNoServer.show();
 } else if(!Settings.option('userId') || !Settings.option('apiToken') || Settings.option('userId') === '' || Settings.option('apiToken') === '') {
   var cardSettingsIncomplete = new UI.Card({
     title: 'Settings incomplete',
-    body: 'Please enter your credentials in the settings.'
+    body: 'Please enter your credentials in the settings.',
+    scrollable: true
   });
   cardSettingsIncomplete.show();
 } else {
@@ -58,6 +61,7 @@ if (!checkHabiticaStatus) {
   
   // start menu
   var mainMenu = new UI.Menu({
+    highlightBackgroundColor: Feature.color('indigo', 'black'),
     sections: [{
       title: 'Tasks',
       items: [{
@@ -75,14 +79,15 @@ if (!checkHabiticaStatus) {
     }]
   });
   
-  if (Pebble.getActiveWatchInfo) {
+  /*if (Pebble.getActiveWatchInfo) {
     mainMenu.highlightBackgroundColor = 'indigo';
   } else {
     mainMenu.highlightBackgroundColor = 'black';
-  }
+  }*/
+  //mainMenu.highlightBackgroundColor = Feature.color('indigo', 'black');
 
   mainMenu.on('select', function(e) {
-    console.log('Selected section ' + e.sectionIndex + ' "' + e.section.title + '" item ' + e.itemIndex + ' "' + e.item.title + '"');
+    //console.log('Selected section ' + e.sectionIndex + ' "' + e.section.title + '" item ' + e.itemIndex + ' "' + e.item.title + '"');
     if (!allTasks) {
       console.log('No tasks available');
       var cardNoTasks = new UI.Card({
@@ -91,16 +96,19 @@ if (!checkHabiticaStatus) {
       });
       cardNoTasks.show();
     } else {
-      console.log('Tasks available');
+      //console.log('Tasks available');
       switch (e.sectionIndex) {
         case 0: { // tasks
           // create tasks menu
-          var menuAllTasks = new UI.Menu();
-          if (Pebble.getActiveWatchInfo) {
+          var menuAllTasks = new UI.Menu({
+            highlightBackgroundColor: Feature.color('indigo', 'black')
+          });
+          /*if (Pebble.getActiveWatchInfo) {
             menuAllTasks.highlightBackgroundColor = 'indigo';
           } else {
             menuAllTasks.highlightBackgroundColor = 'black';
-          }
+          }*/
+          //menuAllTasks.highlightBackgroundColor = Feature.color('indigo', 'black');
           switch (e.itemIndex) {
             case 0: { // habits
               menuAllTasks = createTasksMenu('habit');
@@ -129,7 +137,7 @@ if (!checkHabiticaStatus) {
                 });
                 cardNoUser.show();
               } else {
-                console.log('User data available');
+                /*console.log('User data available');
                 console.log('Health: ' + Math.round(user.stats.hp));
                 console.log('MaxHealth' + user.stats.maxHealth);
                 console.log('Gold: ' + Math.floor(user.stats.gp));
@@ -137,10 +145,11 @@ if (!checkHabiticaStatus) {
                 console.log('Experience: ' + user.stats.exp);
                 console.log('toNextLevel' + user.stats.toNextLevel);
                 console.log('Mana: ' + Math.floor(user.stats.mp));
-                console.log('maxMP' + user.stats.maxMP);
+                console.log('maxMP' + user.stats.maxMP);*/
                 var cardUserStats = new UI.Card({
                   title: 'User Stats',
-                  body: 'Health: ' + Math.round(user.stats.hp) + '/' + user.stats.maxHealth + '\n' + 'Gold: ' + Math.floor(user.stats.gp) + '\n' + 'Level: ' + user.stats.lvl + '\n' + 'Experience: ' + user.stats.exp + '/' + user.stats.toNextLevel + '\n' + 'Mana: ' + Math.floor(user.stats.mp) + '/' + user.stats.maxMP
+                  body: 'Health: ' + Math.round(user.stats.hp) + '/' + user.stats.maxHealth + '\n' + 'Experience: ' + user.stats.exp + '/' + user.stats.toNextLevel + ((user.stats.lvl >= 10) ? '\n' + 'Mana: ' + Math.floor(user.stats.mp) + '/' + user.stats.maxMP : '') + '\n' + 'Gold: ' + Math.floor(user.stats.gp) + '\n' + 'Level: ' + user.stats.lvl,
+                  scrollable: true
                 });
                 cardUserStats.show();
               }
@@ -154,38 +163,6 @@ if (!checkHabiticaStatus) {
   });
   mainMenu.show();
   
-  // create start screen
-  var main = new UI.Card({
-    title: 'habitica',
-    icon: 'images/habiticaTasks_icon28x28bw.png',
-    subtitle: 'Tasks',
-    body: 'Press down to view your tasks.'
-  });
-  //main.show();
-  
-  main.on('click', 'down', function(e) {
-    if (!allTasks) {
-      var cardNoTasks = new UI.Card({
-        title: 'No tasks',
-        body: 'Please retry.'
-      });
-      cardNoTasks.show();
-    } else {
-      // create tasks menu
-      var menuAllTasks = new UI.Menu();
-      if (Pebble.getActiveWatchInfo) {
-        menuAllTasks.highlightBackgroundColor = 'indigo';
-      } else {
-        menuAllTasks.highlightBackgroundColor = 'black';
-      }
-      menuAllTasks = createTasksMenu();
-      menuAllTasks.show();
-    }
-  });
-  
-  main.on('click', 'up', function(e) {
-    
-  });
 }
 
 function checkHabiticaStatus() {
@@ -209,7 +186,9 @@ function checkHabiticaStatus() {
 
 function createTasksMenu(section) {
   // initialize menu
-  var menu = new UI.Menu();
+  var menu = new UI.Menu({
+    highlightBackgroundColor: Feature.color('indigo', 'black')
+  });
   // initialize sections
   var sectionHabits = {
     title: 'Habits',
@@ -234,7 +213,7 @@ function createTasksMenu(section) {
     
     // get only 'section' tasks
     if (!section) {
-      console.log('Section not defined. Get all kind of tasks.');
+      //console.log('Section not defined. Get all kind of tasks.');
       allTasksPrep = enrichTaskItemsByMenuFields(allTasksPrep);
       
       // put appropriate tasks into sections
@@ -259,7 +238,7 @@ function createTasksMenu(section) {
       menu.section(2, sectionDailies);
       menu.section(3, sectionToDos);
     } else {
-      console.log('Section is "' + section + '". Get only these kind of tasks.');
+      //console.log('Section is "' + section + '". Get only these kind of tasks.');
       switch (section) {
         case 'habit': {
           sectionHabits.items = allTasksPrep.filter(
@@ -299,12 +278,12 @@ function createTasksMenu(section) {
   }
   
   menu.on('select', function(e) {
-    console.log('Selected item #' + e.itemIndex + ' of section #' + e.sectionIndex);
-    console.log('The item is titled "' + e.item.title + '"');
+    //console.log('Selected item #' + e.itemIndex + ' of section #' + e.sectionIndex);
+    //console.log('The item is titled "' + e.item.title + '"');
     if (e.item.down === true) {
-      console.log('The selected task has .down-item.');
+      //console.log('The selected task has .down-item.');
       if (e.item.up === false) {
-        console.log('The selected task has no .up-item.');
+        //console.log('The selected task has no .up-item.');
         scoreTaskDown(e.item);
       } else {
         var selectedTask = e;
@@ -319,19 +298,19 @@ function createTasksMenu(section) {
           down: 'images/action_icon_minus.png'
         });
         cardUpDown.on('click', 'up', function(e) {
-          console.log('cardUpDown click up');
+          //console.log('cardUpDown click up');
           scoreTaskUp(selectedTask.item);
           cardUpDown.hide();
         });
         cardUpDown.on('click', 'down', function(e) {
-          console.log('cardUpDown click down');
+          //console.log('cardUpDown click down');
           scoreTaskDown(selectedTask.item);
           cardUpDown.hide();
         });
         cardUpDown.show();
       }
     } else {
-      console.log('The selected task has no .down-item.');
+      //console.log('The selected task has no .down-item.');
       scoreTaskUp(e.item);
     }
   });
@@ -349,7 +328,7 @@ function getUserTasks() {
       }
     },
     function(data, status, request) {
-      console.log('User tasks: ' + JSON.stringify(data));
+      //console.log('User tasks: ' + JSON.stringify(data));
       allTasks = data;
     },
     function(error, status, request) {
@@ -372,7 +351,7 @@ function scoreTaskUp(task) {
           }
         },
         function(data, status, request) {
-          console.log('Return value: ' + JSON.stringify(data));
+          //console.log('Return value: ' + JSON.stringify(data));
         },
         function(error, status, request) {
           console.log('The ajax request failed: ' + error);
@@ -400,7 +379,7 @@ function scoreTaskDown(task) {
           }
         },
         function(data, status, request) {
-          console.log('Return value: ' + JSON.stringify(data));
+          //console.log('Return value: ' + JSON.stringify(data));
         },
         function(error, status, request) {
           console.log('The ajax request failed: ' + error);
@@ -425,7 +404,7 @@ function getUserObject() {
       }
     },
     function(data, status, request) {
-      console.log('User object: ' + JSON.stringify(data));
+      //console.log('User object: ' + JSON.stringify(data));
       user = data;
     },
     function(error, status, request) {
@@ -438,15 +417,26 @@ function enrichTaskItemsByMenuFields(tasksArray) {
   // enrich tasks by menu relevant fields
   tasksArray = tasksArray.map(
     function(x) {
+      var strChecklist = '';
+      if (typeof x.checklist !== 'undefined' && x.checklist.length > 0) {
+        var checkedItems = x.checklist.filter(function(value) {
+          return value.completed;
+        }).length;
+        strChecklist = checkedItems + '/' + x.checklist.length;
+      }
       x.title = x.text;
       if (x.text.length > 14) {
         if (x.text.length > 20) {
-          x.subtitle = '...' + x.text.substring(15);
+          if (strChecklist === '') {
+            x.subtitle = '...' + x.text.substring(15);
+          } else {
+            x.subtitle = '...' + x.text.substring(15, 30) + ' ' + strChecklist;
+          }
         } else {
-          x.subtitle = x.text;
+          x.subtitle = x.text + ' ' + strChecklist;
         }
       } else {
-        x.subtitle = x.text;
+        x.subtitle = x.text + ' ' + strChecklist;
       }
       return x;
     }
@@ -470,4 +460,40 @@ function habiticaWeekday(date) {
   } else {
     return weekday[date.getDay()];
   }
+}
+
+function getMatchingStr4MenuItemTitle(input) {
+  var output = '';
+  var charWidth = new Array([]);
+  charWidth[97] = 9;
+  charWidth[98] = 9;
+  charWidth[99] = 9;
+  charWidth[100] = 9;
+  charWidth[101] = 9;
+  charWidth[102] = 7;
+  charWidth[103] = 9;
+  charWidth[104] = 9;
+  charWidth[105] = 4;
+  charWidth[106] = 4;
+  charWidth[107] = 9;
+  charWidth[108] = 4;
+  charWidth[109] = 14;
+  charWidth[110] = 9;
+  charWidth[111] = 9;
+  charWidth[112] = 9;
+  charWidth[113] = 9;
+  charWidth[114] = 7;
+  charWidth[115] = 7;
+  charWidth[116] = 7;
+  charWidth[117] = 9;
+  charWidth[118] = 9;
+  charWidth[119] = 11;
+  charWidth[120] = 9;
+  charWidth[121] = 9;
+  charWidth[122] = 7;
+  
+  for (var i = 0; i < input.length; i++){
+    
+  }
+  return output;
 }
