@@ -1,7 +1,7 @@
 /**
- * Welcome to Pebble.js!
+ * Welcome to Habitica Tasks
  *
- * This is where you write your app.
+ *
  */
 
 var UI = require('ui');
@@ -10,10 +10,13 @@ var ajax = require('ajax');
 var Feature = require('platform/feature');
 
 // habitica API constants
-var habiticaBaseUrl = 'https://habitica.com/api/v2';
+var habiticaBaseUrl = 'https://habitica.com/api/v3';
 var habiticaStatus = '/status'; //Returns the status of the server (up or down). Does not require authentication.
-var habiticaGetUserTasksUrl = '/user/tasks';
-var habiticaGetUserAnonymized = '/user/anonymized';
+var habiticaGetTasksUser = '/tasks/user';
+//var habiticaGetUserAnonymized = '/user/anonymized';
+var habiticaGetUser = '/user';
+var habiticaPostTasksScore = '/tasks/:taskId/score/:direction';
+var habiticaPostTasksChecklistScore = '/tasks/:taskId/checklist/:itemId/score';
 
 // Set a configurable
 Settings.config(
@@ -79,13 +82,6 @@ if (!checkHabiticaStatus) {
     }]
   });
   
-  /*if (Pebble.getActiveWatchInfo) {
-    mainMenu.highlightBackgroundColor = 'indigo';
-  } else {
-    mainMenu.highlightBackgroundColor = 'black';
-  }*/
-  //mainMenu.highlightBackgroundColor = Feature.color('indigo', 'black');
-
   mainMenu.on('select', function(e) {
     //console.log('Selected section ' + e.sectionIndex + ' "' + e.section.title + '" item ' + e.itemIndex + ' "' + e.item.title + '"');
     if (!allTasks) {
@@ -103,12 +99,6 @@ if (!checkHabiticaStatus) {
           var menuAllTasks = new UI.Menu({
             highlightBackgroundColor: Feature.color('indigo', 'black')
           });
-          /*if (Pebble.getActiveWatchInfo) {
-            menuAllTasks.highlightBackgroundColor = 'indigo';
-          } else {
-            menuAllTasks.highlightBackgroundColor = 'black';
-          }*/
-          //menuAllTasks.highlightBackgroundColor = Feature.color('indigo', 'black');
           switch (e.itemIndex) {
             case 0: { // habits
               menuAllTasks = createTasksMenu('habit');
@@ -174,8 +164,12 @@ function checkHabiticaStatus() {
       async: 'false'
     },
     function(data, status, request) {
-      console.log('Habitica Server Status: ' + data.status);
-      if (data.status == 'up') {serverIsUp = true;}
+      if (data.success){
+        console.log('Habitica Server Status: ' + data.data.status);
+        if (data.data.status == 'up') {serverIsUp = true;}
+      } else {
+        console.log(data.error + ' - ' + data.message);
+      }
     },
     function(error, status, request) {
       console.log('The ajax request failed: ' + error);
@@ -266,7 +260,7 @@ function createTasksMenu(section) {
         case 'todo': {
           sectionToDos.items = allTasksPrep.filter(
             function(x){
-              return x.type == 'todo' && !x.completed;
+              return x.type == 'todo'; // should nout be necessary any more && !x.completed;
             }
           ).slice();
           sectionToDos.items = enrichTaskItemsByMenuFields(sectionToDos.items);
@@ -311,16 +305,94 @@ function createTasksMenu(section) {
       }
     } else {
       //console.log('The selected task has no .down-item.');
-      scoreTaskUp(e.item);
+      //console.log('Selected item is:' + JSON.stringify(e.item));
+      if (typeof e.item.checklist !== 'undefined' && e.item.checklist.length > 0) {
+        // access checklist
+        var checklistMenu = new UI.Menu({
+          highlightBackgroundColor: Feature.color('indigo', 'black')
+        });
+        // initialize sections
+        var sectionChecklist = {
+        title: 'Checklist',
+        items: []
+        };
+        sectionChecklist.items = e.item.checklist.slice();
+        sectionChecklist.items = enrichChecklistItemsByMenuFields(sectionChecklist.items, e.item.id);
+        checklistMenu.section(1, sectionChecklist);
+        console.log(JSON.stringify(sectionChecklist)); // remove
+        checklistMenu.on('select', function(e) {
+          scoreChecklistItem(e.item);
+        });
+        checklistMenu.show();
+        // scoreTaskUp(e.item); //remove when ready
+      } else {
+        // no checklist available -> just score the task
+        scoreTaskUp(e.item); 
+      }
     }
   });
   return menu;
 }
 
+function scoreChecklistItem(checklistItem) {
+  if (checklistItem) {
+    if (checklistItem.id) {
+      ajax(
+        {
+          url: habiticaBaseUrl + habiticaPostTasksChecklistScore.replace(':taskId', checklistItem.taskId).replace(':itemId', checklistItem.id),
+          method: 'post',
+          type: 'json',
+          headers: {
+            'x-api-user': Settings.option('userId'),
+            'x-api-key': Settings.option('apiToken')
+          }
+        },
+        function(data, status, request) {
+          if (data.success){
+            //console.log('User tasks: ' + JSON.stringify(data));
+            
+          } else {
+            console.log(data.error + ' - ' + data.message);
+          }
+        },
+        function(error, status, request) {
+          console.log('The ajax request failed: ' + error);
+        }
+      );
+    } else {
+      console.log('Checklist item id not available.');
+    }
+  } else {
+    console.log('Checklist item not available.');
+  }
+}
+
+function enrichChecklistItemsByMenuFields(checklistArray, taskId) {
+  // enrich tasks by menu relevant fields
+  checklistArray = checklistArray.filter(
+    function(x) {
+      return !x.completed;
+    }
+  );
+  checklistArray = checklistArray.map(
+    function(x) {
+      x.title = x.text;
+      x.taskId = taskId;
+      if (x.text.length > 20) {
+        x.subtitle = '...' + x.text.substring(15);
+      } else {
+        x.subtitle = x.text;
+      }
+      return x;
+    }
+  );
+  return checklistArray;
+}
+
 function getUserTasks() {
   ajax(
     {
-      url: habiticaBaseUrl + habiticaGetUserTasksUrl,
+      url: habiticaBaseUrl + habiticaGetTasksUser,
       type: 'json',
       headers: {
         'x-api-user': Settings.option('userId'),
@@ -328,8 +400,12 @@ function getUserTasks() {
       }
     },
     function(data, status, request) {
-      //console.log('User tasks: ' + JSON.stringify(data));
-      allTasks = data;
+      if (data.success){
+        //console.log('User tasks: ' + JSON.stringify(data));
+        allTasks = data.data;
+      } else {
+        console.log(data.error + ' - ' + data.message);
+      }
     },
     function(error, status, request) {
       console.log('The ajax request failed: ' + error);
@@ -342,7 +418,7 @@ function scoreTaskUp(task) {
     if (task.id) {
       ajax(
         {
-          url: habiticaBaseUrl + habiticaGetUserTasksUrl + '/' + task.id + '/up',
+          url: habiticaBaseUrl + habiticaPostTasksScore.replace(':taskId', task.id).replace(':direction', 'up'),
           method: 'post',
           type: 'json',
           headers: {
@@ -351,7 +427,17 @@ function scoreTaskUp(task) {
           }
         },
         function(data, status, request) {
-          //console.log('Return value: ' + JSON.stringify(data));
+          if (data.success){
+            //console.log('User tasks: ' + JSON.stringify(data));
+            // update users stats
+            user.stats.hp = data.data.hp;
+            user.stats.mp = data.data.mp;
+            user.stats.exp = data.data.exp;
+            user.stats.gp = data.data.gp;
+            user.stats.lvl = data.data.lvl;
+          } else {
+            console.log(data.error + ' - ' + data.message);
+          }
         },
         function(error, status, request) {
           console.log('The ajax request failed: ' + error);
@@ -370,7 +456,7 @@ function scoreTaskDown(task) {
     if (task.id) {
       ajax(
         {
-          url: habiticaBaseUrl + habiticaGetUserTasksUrl + '/' + task.id + '/down',
+          url: habiticaBaseUrl + habiticaPostTasksScore.replace(':taskId', task.id).replace(':direction', 'down'),
           method: 'post',
           type: 'json',
           headers: {
@@ -379,7 +465,17 @@ function scoreTaskDown(task) {
           }
         },
         function(data, status, request) {
-          //console.log('Return value: ' + JSON.stringify(data));
+          if (data.success){
+            //console.log('User tasks: ' + JSON.stringify(data));
+            // update users stats
+            user.stats.hp = data.data.hp;
+            user.stats.mp = data.data.mp;
+            user.stats.exp = data.data.exp;
+            user.stats.gp = data.data.gp;
+            user.stats.lvl = data.data.lvl;
+          } else {
+            console.log(data.error + ' - ' + data.message);
+          }
         },
         function(error, status, request) {
           console.log('The ajax request failed: ' + error);
@@ -396,7 +492,7 @@ function scoreTaskDown(task) {
 function getUserObject() {
   ajax(
     {
-      url: habiticaBaseUrl + habiticaGetUserAnonymized,
+      url: habiticaBaseUrl + habiticaGetUser,
       type: 'json',
       headers: {
         'x-api-user': Settings.option('userId'),
@@ -404,8 +500,12 @@ function getUserObject() {
       }
     },
     function(data, status, request) {
-      //console.log('User object: ' + JSON.stringify(data));
-      user = data;
+      if (data.success){
+        //console.log('User object: ' + JSON.stringify(data));
+        user = data.data;
+      } else {
+        console.log(data.error + ' - ' + data.message);
+      }
     },
     function(error, status, request) {
       console.log('The ajax request failed: ' + error);
