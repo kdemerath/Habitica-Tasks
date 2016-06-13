@@ -228,9 +228,9 @@ function createTasksMenu(section) {
       ).slice();
       
       // put sections into menu
-      menu.section(1, sectionHabits);
-      menu.section(2, sectionDailies);
-      menu.section(3, sectionToDos);
+      menu.section(0, sectionHabits);
+      menu.section(1, sectionDailies);
+      menu.section(2, sectionToDos);
     } else {
       //console.log('Section is "' + section + '". Get only these kind of tasks.');
       switch (section) {
@@ -241,7 +241,7 @@ function createTasksMenu(section) {
             }
           ).slice();
           sectionHabits.items = enrichTaskItemsByMenuFields(sectionHabits.items);
-          menu.section(1, sectionHabits);
+          menu.section(0, sectionHabits);
           break;
         }
         case 'daily': {
@@ -254,7 +254,7 @@ function createTasksMenu(section) {
             }
           ).slice();
           sectionDailies.items = enrichTaskItemsByMenuFields(sectionDailies.items);
-          menu.section(2, sectionDailies);
+          menu.section(0, sectionDailies);
           break;
         }
         case 'todo': {
@@ -264,12 +264,47 @@ function createTasksMenu(section) {
             }
           ).slice();
           sectionToDos.items = enrichTaskItemsByMenuFields(sectionToDos.items);
-          menu.section(3, sectionToDos);
+          menu.section(0, sectionToDos);
           break;
         }
       }
     }
   }
+  
+  menu.on('longSelect', function(e) {
+    if (e.item.down === true) {
+      //console.log('The selected task has .down-item.');
+      if (e.item.up === false) {
+        //console.log('The selected task has no .up-item.');
+        scoreTaskDown(e.item);
+      } else {
+        var selectedTask = e;
+        var cardUpDown = new UI.Card(
+          {
+            'title': e.item.type,
+            'body': e.item.title
+          }
+        );
+        cardUpDown.action({
+          up: 'images/action_icon_plus.png',
+          down: 'images/action_icon_minus.png'
+        });
+        cardUpDown.on('click', 'up', function(e) {
+          //console.log('cardUpDown click up');
+          scoreTaskUp(selectedTask.item);
+          cardUpDown.hide();
+        });
+        cardUpDown.on('click', 'down', function(e) {
+          //console.log('cardUpDown click down');
+          scoreTaskDown(selectedTask.item);
+          cardUpDown.hide();
+        });
+        cardUpDown.show();
+      }
+    } else {
+      scoreTaskUp(e.item);
+    }
+  });
   
   menu.on('select', function(e) {
     //console.log('Selected item #' + e.itemIndex + ' of section #' + e.sectionIndex);
@@ -318,8 +353,8 @@ function createTasksMenu(section) {
         };
         sectionChecklist.items = e.item.checklist.slice();
         sectionChecklist.items = enrichChecklistItemsByMenuFields(sectionChecklist.items, e.item.id);
-        checklistMenu.section(1, sectionChecklist);
-        console.log(JSON.stringify(sectionChecklist)); // remove
+        checklistMenu.section(0, sectionChecklist);
+        //console.log(JSON.stringify(sectionChecklist)); // remove
         checklistMenu.on('select', function(e) {
           scoreChecklistItem(e.item);
         });
