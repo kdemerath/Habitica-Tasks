@@ -8,6 +8,7 @@ var UI = require('ui');
 var Settings = require('settings');
 var ajax = require('ajax');
 var Feature = require('platform/feature');
+var timelineToken = '';
 
 // habitica API constants
 var habiticaBaseUrl = 'https://habitica.com/api/v3';
@@ -61,6 +62,19 @@ if (!checkHabiticaStatus) {
   // get user object
   var user = {};
   getUserObject();
+  
+  // get timeline token
+  Pebble.getTimelineToken(function(token) {
+    console.log('My timeline token is ' + token);
+    timelineToken = token;
+    
+    // Send tasks to the timeline now that we have our token
+    if (allTasks){
+      allTasks.map(postToTimeline);
+    }    
+  }, function(error) {
+    console.log('Error getting timeline token: ' + error);
+  });
   
   // start menu
   var mainMenu = new UI.Menu({
@@ -442,6 +456,9 @@ function getUserTasks() {
       if (data.success){
         //console.log('User tasks: ' + JSON.stringify(data));
         allTasks = data.data;
+        
+        // Send them to the timeline
+        allTasks.map(postToTimeline);
       } else {
         console.log(data.error + ' - ' + data.message);
       }
@@ -490,6 +507,29 @@ function scoreTaskUp(task) {
               scrollable: true
             });
             cardShowScore.show();
+            
+            // Drop from timeline (if todo)
+            if (task.type == 'todo'){
+              ajax(
+              {
+                url: 'https://timeline-api.getpebble.com/v1/user/pins/habitica-' + task.id,
+                method: 'delete',
+                type: 'text',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-User-Token': timelineToken,
+                },
+              },
+              function(data, status, request) {
+                console.log("Timeline DELETE success");
+              },
+              function(error, status, request) {
+                new UI.Card({title:'Timeline Failed', scrollable: true,
+                             body:'Unable to DELETE to timeline Error:' + JSON.stringify(error) + ' Status: ' + status.toString() + ' Request: ' + JSON.stringify(request)}).show(); 
+              }
+            );
+            }
+            
             
             // Refresh tasks
             getUserTasks();          
@@ -629,28 +669,100 @@ function enrichTaskItemsByMenuFields(tasksArray) {
       }else if (x.date){
         // This is a todo with a due date
         x.subtitle = "Due " + x.date.slice(0,10);
-      }
-
+      }     
       
-      /*
-      if (x.text.length > 14) {
-        if (x.text.length > 20) {
-          if (strChecklist === '') {
-            x.subtitle = '...' + x.text.substring(15);
-          } else {
-            x.subtitle = '...' + x.text.substring(15, 30) + ' ' + strChecklist;
-          }
-        } else {
-          x.subtitle = x.text + ' ' + strChecklist;
-        }
-      } else {
-        x.subtitle = x.text + ' ' + strChecklist;
-      }
-      */
       return x;
     }
   );
   return tasksArray;
+}
+
+function postToTimeline(task) {
+  // Token hasn't loaded yet
+  if (timelineToken === '') {
+    return;
+  }
+  
+  // Don't put habits or rewards on the timeline
+  if (task.type == 'habit'){    
+    return;
+  }  
+  if (task.type == 'reward'){
+    return;
+  }
+  
+  // Only put incomplete dailys due today
+  if (task.type == 'daily'){
+    var today = new Date();
+    var startDate = new Date(task.startDate);
+
+    if (!(task.type == 'daily' && !task.completed  && 
+        ((task.frequency == 'weekly' && task.repeat[habiticaWeekday()]) || 
+         (task.frequency == 'daily' & startDate < today && (Math.floor((today - startDate)/(1000*60*60*24)) % task.everyX === 0))))){
+      // Drop this task if it's on the timeline for some reason (maybe recently got deleted)
+      ajax(
+        {
+          url: 'https://timeline-api.getpebble.com/v1/user/pins/habitica-' + task.id,
+          method: 'delete',
+          type: 'text',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Token': timelineToken,
+          },
+        },
+        function(data, status, request) {
+          console.log("Timeline DELETE success");
+        },
+        function(error, status, request) {
+          new UI.Card({title:'Timeline Failed', scrollable: true,
+                       body:'Unable to DELETE to timeline Error:' + JSON.stringify(error) + ' Status: ' + status.toString() + ' Request: ' + JSON.stringify(request)}).show(); 
+        }
+      );
+      
+      return;
+    }
+
+  }
+  
+  var taskDate = new Date();  
+  taskDate.setHours(22,0,0);
+  
+  if (task.date){
+    taskDate = new Date(Date.parse(task.date));
+    // Set to noon on date due
+    taskDate.setHours(12,0,0);
+  }
+  
+  ajax(
+    {
+      url: 'https://timeline-api.getpebble.com/v1/user/pins/habitica-' + task.id,
+      method: 'put',
+      type: 'text',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': timelineToken,
+      },
+      data: JSON.stringify({
+        "id": "habitica-" + task.id,
+        "time": taskDate,
+        "layout": {
+          "type": "genericPin",
+          "title": task.text,
+          "body": task.notes + " (" + task.type + ")",
+          "tinyIcon": "system://images/GENERIC_CONFIRMATION"
+        }
+      })
+    },
+    function(data, status, request) {
+      //new UI.Card({title:'Timeline Success', body:'Posted: ' + JSON.stringify(data)}).show();
+      console.log("Timeline PUT success");
+    },
+    function(error, status, request) {
+      new UI.Card({title:'Timeline Failed', scrollable: true,
+                   body:'Unable to PUT to timeline Error:' + JSON.stringify(error) + ' Status: ' + status.toString() + ' Request: ' + JSON.stringify(request)}).show(); 
+    }
+  );
+  
 }
 
 function habiticaWeekday(date) {
