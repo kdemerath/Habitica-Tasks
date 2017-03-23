@@ -29,19 +29,24 @@
                 "type": "font"
             },
             {
-                "file": "images/habiticaTasks_AppIcon",
+                "file": "images/habiticaTasks_AppIcon-color.png",
                 "menuIcon": true,
-                "name": "IMAGES_HABITICATASKS_APPICON",
-                "type": "bitmap"
+                "name": "IMAGES_HABITICATASKS_APPICON_COLOR_PNG",
+                "type": "png"
             },
             {
-                "file": "images/action_icon_minus.png",
-                "name": "IMAGES_ACTION_ICON_MINUS_PNG",
+                "file": "images/habiticaTasks_AppIcon",
+                "name": "IMAGES_HABITICATASKS_APPICON",
                 "type": "bitmap"
             },
             {
                 "file": "images/action_icon_plus.png",
                 "name": "IMAGES_ACTION_ICON_PLUS_PNG",
+                "type": "bitmap"
+            },
+            {
+                "file": "images/action_icon_minus.png",
+                "name": "IMAGES_ACTION_ICON_MINUS_PNG",
                 "type": "bitmap"
             }
         ]
@@ -50,10 +55,9 @@
     "shortName": "Habitica Tasks",
     "targetPlatforms": [
         "aplite",
-        "basalt",
-        "chalk"
+        "basalt"
     ],
-    "uuid": "0eb30e8c-0040-40e5-a72b-47ddf0fba3c9",
+    "uuid": "b4754974-0298-42ad-b3f9-bded899f987f",
     "versionCode": 1,
     "versionLabel": "1.8",
     "watchapp": {
