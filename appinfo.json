@@ -55,11 +55,12 @@
     "shortName": "Habitica Tasks",
     "targetPlatforms": [
         "aplite",
-        "basalt"
+        "basalt",
+        "chalk"
     ],
-    "uuid": "b4754974-0298-42ad-b3f9-bded899f987f",
+    "uuid": "0eb30e8c-0040-40e5-a72b-47ddf0fba3c9",
     "versionCode": 1,
-    "versionLabel": "1.8",
+    "versionLabel": "1.9",
     "watchapp": {
         "hiddenApp": false,
         "watchface": false

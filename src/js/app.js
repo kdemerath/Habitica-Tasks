@@ -71,7 +71,7 @@ if (!checkHabiticaStatus) {
     // Send tasks to the timeline now that we have our token
     if (allTasks){
       allTasks.map(postToTimeline);
-    }    
+    }
   }, function(error) {
     console.log('Error getting timeline token: ' + error);
   });
@@ -152,7 +152,7 @@ if (!checkHabiticaStatus) {
                 console.log('maxMP' + user.stats.maxMP);*/
                 var cardUserStats = new UI.Card({
                   title: 'User Stats',
-                  body: 'Health: ' + Math.round(user.stats.hp) + '/' + user.stats.maxHealth + '\n' + 'Experience: ' + user.stats.exp + '/' + user.stats.toNextLevel + ((user.stats.lvl >= 10) ? '\n' + 'Mana: ' + Math.floor(user.stats.mp) + '/' + user.stats.maxMP : '') + '\n' + 'Gold: ' + Math.floor(user.stats.gp) + '\n' + 'Level: ' + user.stats.lvl,
+                  body: 'Health: ' + Math.round(user.stats.hp) + '/' + user.stats.maxHealth + '\n' + 'Experience: ' + Math.round(user.stats.exp) + '/' + user.stats.toNextLevel + ((user.stats.lvl >= 10) ? '\n' + 'Mana: ' + Math.floor(user.stats.mp) + '/' + user.stats.maxMP : '') + '\n' + 'Gold: ' + Math.floor(user.stats.gp) + '\n' + 'Level: ' + user.stats.lvl,
                   scrollable: true
                 });
                 cardUserStats.show();
@@ -485,7 +485,7 @@ function scoreTaskUp(task) {
         function(data, status, request) {
           if (data.success){
             //console.log('User tasks: ' + JSON.stringify(data));
-            console.log(JSON.stringify(task));
+            //console.log(JSON.stringify(task));
             
             // Figure out how much we got
             var addedGold = data.data.gp - user.stats.gp;
@@ -517,15 +517,16 @@ function scoreTaskUp(task) {
                 type: 'text',
                 headers: {
                   'Content-Type': 'application/json',
-                  'X-User-Token': timelineToken,
+                  'X-User-Token': timelineToken
                 },
               },
               function(data, status, request) {
-                console.log("Timeline DELETE success");
+                //console.log("Timeline DELETE success");
               },
               function(error, status, request) {
-                new UI.Card({title:'Timeline Failed', scrollable: true,
-                             body:'Unable to DELETE to timeline Error:' + JSON.stringify(error) + ' Status: ' + status.toString() + ' Request: ' + JSON.stringify(request)}).show(); 
+                console.log('Timeline Failed: Unable to DELETE to timeline Error:' + JSON.stringify(error) + ' Status: ' + status.toString() + ' Request: ' + JSON.stringify(request));
+                //new UI.Card({title:'Timeline Failed', scrollable: true,
+                  //           body:'Unable to DELETE to timeline Error:' + JSON.stringify(error) + ' Status: ' + status.toString() + ' Request: ' + JSON.stringify(request)}).show(); 
               }
             );
             }
@@ -566,7 +567,7 @@ function scoreTaskDown(task) {
         function(data, status, request) {
           if (data.success){
             //console.log('User tasks: ' + JSON.stringify(data));
-            console.log(JSON.stringify(task));
+            //console.log(JSON.stringify(task));
             
             // Figure out how much we got
             var removedHp = -(data.data.hp - user.stats.hp);
@@ -707,15 +708,16 @@ function postToTimeline(task) {
           type: 'text',
           headers: {
             'Content-Type': 'application/json',
-            'X-User-Token': timelineToken,
+            'X-User-Token': timelineToken
           },
         },
         function(data, status, request) {
-          console.log("Timeline DELETE success");
+          //console.log("Timeline DELETE success");
         },
         function(error, status, request) {
-          new UI.Card({title:'Timeline Failed', scrollable: true,
-                       body:'Unable to DELETE to timeline Error:' + JSON.stringify(error) + ' Status: ' + status.toString() + ' Request: ' + JSON.stringify(request)}).show(); 
+          console.log('Timeline Failed: Unable to DELETE to timeline Error:' + JSON.stringify(error) + ' Status: ' + status.toString() + ' Request: ' + JSON.stringify(request));
+          //new UI.Card({title:'Timeline Failed', scrollable: true,
+            //           body:'Unable to DELETE to timeline Error:' + JSON.stringify(error) + ' Status: ' + status.toString() + ' Request: ' + JSON.stringify(request)}).show(); 
         }
       );
       
@@ -725,13 +727,32 @@ function postToTimeline(task) {
   }
   
   var taskDate = new Date();  
-  taskDate.setHours(22,0,0);
+  taskDate.setHours(12,0,0);
   
   if (task.date){
     taskDate = new Date(Date.parse(task.date));
     // Set to noon on date due
     taskDate.setHours(12,0,0);
   }
+  /*console.log('Try to PUT this to timeline: ' + JSON.stringify({
+      url: 'https://timeline-api.getpebble.com/v1/user/pins/habitica-' + task.id,
+      method: 'put',
+      type: 'text',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Token': timelineToken
+      },
+      data: JSON.stringify({
+        "id": "habitica-" + task.id,
+        "time": taskDate,
+        "layout": {
+          "type": "genericPin",
+          "title": task.text,
+          "body": task.notes + " (" + task.type + ")",
+          "tinyIcon": "system://images/GENERIC_CONFIRMATION"
+        }
+      })
+    }));*/
   
   ajax(
     {
@@ -740,7 +761,7 @@ function postToTimeline(task) {
       type: 'text',
       headers: {
         'Content-Type': 'application/json',
-        'X-User-Token': timelineToken,
+        'X-User-Token': timelineToken
       },
       data: JSON.stringify({
         "id": "habitica-" + task.id,
@@ -755,11 +776,12 @@ function postToTimeline(task) {
     },
     function(data, status, request) {
       //new UI.Card({title:'Timeline Success', body:'Posted: ' + JSON.stringify(data)}).show();
-      console.log("Timeline PUT success");
+      //console.log("Timeline PUT success");
     },
     function(error, status, request) {
-      new UI.Card({title:'Timeline Failed', scrollable: true,
-                   body:'Unable to PUT to timeline Error:' + JSON.stringify(error) + ' Status: ' + status.toString() + ' Request: ' + JSON.stringify(request)}).show(); 
+      console.log('Timeline Failed: Unable to PUT to timeline Error:' + JSON.stringify(error) + ' Status: ' + status.toString() + ' Request: ' + JSON.stringify(request));
+      //new UI.Card({title:'Timeline Failed', scrollable: true,
+        //           body:'Unable to PUT to timeline Error:' + JSON.stringify(error) + ' Status: ' + status.toString() + ' Request: ' + JSON.stringify(request)}).show(); 
     }
   );
   
@@ -781,40 +803,4 @@ function habiticaWeekday(date) {
   } else {
     return weekday[date.getDay()];
   }
-}
-
-function getMatchingStr4MenuItemTitle(input) {
-  var output = '';
-  var charWidth = new Array([]);
-  charWidth[97] = 9;
-  charWidth[98] = 9;
-  charWidth[99] = 9;
-  charWidth[100] = 9;
-  charWidth[101] = 9;
-  charWidth[102] = 7;
-  charWidth[103] = 9;
-  charWidth[104] = 9;
-  charWidth[105] = 4;
-  charWidth[106] = 4;
-  charWidth[107] = 9;
-  charWidth[108] = 4;
-  charWidth[109] = 14;
-  charWidth[110] = 9;
-  charWidth[111] = 9;
-  charWidth[112] = 9;
-  charWidth[113] = 9;
-  charWidth[114] = 7;
-  charWidth[115] = 7;
-  charWidth[116] = 7;
-  charWidth[117] = 9;
-  charWidth[118] = 9;
-  charWidth[119] = 11;
-  charWidth[120] = 9;
-  charWidth[121] = 9;
-  charWidth[122] = 7;
-  
-  for (var i = 0; i < input.length; i++){
-    
-  }
-  return output;
 }
