@@ -6,7 +6,7 @@
 	<script src="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
 	</head>
 	<body>
-		<h1>Habitica-Tasks Options</h1>
+		<h1>Habitica-Tasks Options v1.10</h1>
 		<p>User authentication</p>
 		<label for="UserID">User ID:
 			<input id="UserID">
@@ -38,6 +38,30 @@
 	      			<!--//document.location = location;-->
 	    			},
   			false);
+			
+		function updateSettings() {
+			if (window.location.search) {
+				var settings = decodeURIComponent(window.location.search).replace('?settings=','');
+				if (settings == "null") {
+					settings = '{"banner":"Hello World","weekday":"y","showdate":true,"footer":"03"}';
+				}
+				if (settings) {
+					var json = $.parseJSON(settings);
+					if (json.banner) {
+						$('#banner').val(json.banner);
+					}
+					if (json.weekday) {
+						$('#weekday').val(json.weekday).slider('refresh');
+					}
+					if (json.footer) {
+						$('#footer').val(json.footer).selectmenu('refresh');
+					}
+					$("#showdate").prop('checked',json.showdate).checkboxradio('refresh');
+	      			}
+	    		}
+	  	}
 
+		$('#main').bind('pageinit', updateSettings);
+			
 	</script>
 </html>
